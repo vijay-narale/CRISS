@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}500 Server Error{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5 my-5">
+    <div class="display-1 text-warning fw-bold mb-3">500</div>
+    <h3 class="fw-bold text-navy-800 mb-2">Internal Server Error</h3>
+    <p class="text-secondary mb-4">
+        An unexpected database or application exception occurred. The transaction has been safely rolled back.
+    </p>
+    <a href="{{ url_for('catalog.index') }}" class="btn btn-teal">
+        <i class="bi bi-house me-1"></i> Return to Safety
+    </a>
+</div>
+{% endblock %}

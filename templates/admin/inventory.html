@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Inventory{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">Inventory & Physical Copy Control</h3>
+            <p class="text-muted small mb-0">Master catalog metadata, barcode provisioning, and copy lifecycle management</p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <button type="button" class="btn btn-teal btn-sm" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                <i class="bi bi-plus-circle me-1"></i> Add Master Resource
+            </button>
+            <button type="button" class="btn btn-outline-teal btn-sm" data-bs-toggle="modal" data-bs-target="#addCopyModal">
+                <i class="bi bi-upc-scan me-1"></i> Register Copy Barcode
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Strip -->
+    <div class="card card-criss p-3 mb-4">
+        <form method="GET" action="{{ url_for('admin.inventory') }}" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                        <option value="{{ c.category_id }}" {% if selected_category == c.category_id|string %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="dept" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                        <option value="{{ d.department_id }}" {% if selected_dept == d.department_id|string %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Copy Statuses</option>
+                    <option value="available" {% if selected_status == 'available' %}selected{% endif %}>Available</option>
+                    <option value="on_loan" {% if selected_status == 'on_loan' %}selected{% endif %}>On Loan</option>
+                    <option value="reserved" {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
+                    <option value="maintenance" {% if selected_status == 'maintenance' %}selected{% endif %}>In Maintenance</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-navy btn-sm w-100">Filter</button>
+                <a href="{{ url_for('admin.inventory') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabbed views: Master Catalog Resources vs Physical Copies -->
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-semibold" id="pills-resources-tab" data-bs-toggle="pill" data-bs-target="#pills-resources" type="button" role="tab">
+                <i class="bi bi-collection me-1"></i> Master Catalog Resources ({{ resources|length }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="pills-copies-tab" data-bs-toggle="pill" data-bs-target="#pills-copies" type="button" role="tab">
+                <i class="bi bi-upc me-1"></i> Physical Copy Inventory ({{ copies|length }})
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        <!-- Tab 1: Master Resources -->
+        <div class="tab-pane fade show active" id="pills-resources" role="tabpanel">
+            <div class="card card-criss">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-criss mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Dept</th>
+                                    <th>Total Units</th>
+                                    <th>Available</th>
+                                    <th>On Loan</th>
+                                    <th>Reserved</th>
+                                    <th>Maint</th>
+                                    <th>Approval</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in resources %}
+                                <tr>
+                                    <td class="text-muted small">{{ r.resource_id }}</td>
+                                    <td class="fw-bold text-navy-800">{{ r.title }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ r.category_name }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ r.dept_code or 'LIB' }}</span></td>
+                                    <td class="fw-bold">{{ r.total_copies }}</td>
+                                    <td><span class="badge badge-available">{{ r.available_copies or 0 }}</span></td>
+                                    <td><span class="badge badge-onloan">{{ r.on_loan_copies or 0 }}</span></td>
+                                    <td><span class="badge badge-reserved">{{ r.reserved_copies or 0 }}</span></td>
+                                    <td><span class="badge badge-maint">{{ r.maintenance_copies or 0 }}</span></td>
+                                    <td>
+                                        {% if r.requires_approval %}
+                                            <span class="badge bg-warning text-dark">Required</span>
+                                        {% else %}
+                                            <span class="text-muted small">Auto</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('catalog.resource_detail', resource_id=r.resource_id) }}" class="btn btn-outline-teal btn-sm py-0 px-2">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Physical Copies -->
+        <div class="tab-pane fade" id="pills-copies" role="tabpanel">
+            <div class="card card-criss">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-criss mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Copy ID</th>
+                                    <th>Barcode</th>
+                                    <th>Resource Title</th>
+                                    <th>Category</th>
+                                    <th>Condition Grade</th>
+                                    <th>Current Status</th>
+                                    <th class="text-end">Update Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cp in copies %}
+                                <tr>
+                                    <td class="text-muted small">{{ cp.copy_id }}</td>
+                                    <td class="fw-bold font-monospace text-navy-800">{{ cp.barcode }}</td>
+                                    <td>{{ cp.resource_title }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ cp.category_name }}</span></td>
+                                    <td>{{ cp.condition_grade }}</td>
+                                    <td>
+                                        {% if cp.status == 'available' %}
+                                            <span class="badge badge-available">Available</span>
+                                        {% elif cp.status == 'on_loan' %}
+                                            <span class="badge badge-onloan">On Loan</span>
+                                        {% elif cp.status == 'reserved' %}
+                                            <span class="badge badge-reserved">Reserved</span>
+                                        {% elif cp.status == 'maintenance' %}
+                                            <span class="badge badge-maint">In Maintenance</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ cp.status|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="POST" action="{{ url_for('admin.update_copy_status', copy_id=cp.copy_id) }}" class="d-inline-flex gap-1 justify-content-end">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <select name="status" class="form-select form-select-sm" style="width: 130px;">
+                                                <option value="available" {% if cp.status == 'available' %}selected{% endif %}>Available</option>
+                                                <option value="reserved" {% if cp.status == 'reserved' %}selected{% endif %}>Reserved</option>
+                                                <option value="on_loan" {% if cp.status == 'on_loan' %}selected{% endif %}>On Loan</option>
+                                                <option value="maintenance" {% if cp.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                                                <option value="retired" {% if cp.status == 'retired' %}selected{% endif %}>Retired</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-outline-dark btn-sm">Set</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Master Resource Modal -->
+<div class="modal fade" id="addResourceModal" tabindex="-1" aria-labelledby="addResourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="addResourceModalLabel">Add Master Resource to Campus Catalog</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_resource') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Resource Title *</label>
+                            <input type="text" class="form-control" name="title" required placeholder="e.g. NVIDIA Jetson Orin Nano Developer Kit">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category *</label>
+                            <select class="form-select" name="category_id" required>
+                                <option value="">-- Select Category --</option>
+                                {% for c in categories %}
+                                    <option value="{{ c.category_id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department *</label>
+                            <select class="form-select" name="department_id">
+                                <option value="">-- Central Library (Default) --</option>
+                                {% for d in departments %}
+                                    <option value="{{ d.department_id }}">{{ d.code }} - {{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Model / Author</label>
+                            <input type="text" class="form-control" name="model_or_author" placeholder="Manufacturer or Author name">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">ISBN or Serial Identifier</label>
+                            <input type="text" class="form-control" name="isbn_or_identifier" placeholder="e.g. 978-0138147570 or JETSON-NANO-01">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Circulation Location *</label>
+                            <input type="text" class="form-control" name="location" required placeholder="e.g. Tesla Hall Rm 204 or Main Library Tech Desk">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Coursework Purpose & Curriculum Use</label>
+                            <input type="text" class="form-control" name="purpose" placeholder="e.g. Edge AI and computer vision prototyping">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Initial Physical Copies to Generate</label>
+                            <input type="number" class="form-control" name="initial_copies" value="2" min="1" max="50">
+                            <div class="form-text small">System will automatically create unique barcodes (e.g. CRISS-LAB-XXX-01).</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Approval Requirement</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="requires_approval" value="1" id="reqAppCheck">
+                                <label class="form-check-label" for="reqAppCheck">
+                                    Requires faculty/admin coordinator approval for student reservations
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal fw-semibold">Save Master Resource</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Copy Barcode Modal -->
+<div class="modal fade" id="addCopyModal" tabindex="-1" aria-labelledby="addCopyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="addCopyModalLabel">Register Physical Inventory Copy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_copy') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Target Catalog Resource *</label>
+                        <select class="form-select" name="resource_id" required>
+                            <option value="">-- Choose Resource --</option>
+                            {% for r in resources %}
+                                <option value="{{ r.resource_id }}">{{ r.title }} ({{ r.category_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Unique Physical Barcode *</label>
+                        <input type="text" class="form-control font-monospace" name="barcode" required placeholder="e.g. CRISS-KIT-ARD04">
+                        <div class="form-text small">Barcode will be formatted uppercase and must be unique.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Initial Condition Grade</label>
+                        <select class="form-select" name="condition_grade">
+                            <option value="New">New</option>
+                            <option value="Good" selected>Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Needs Maintenance">Needs Maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-teal fw-semibold">Register Physical Copy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

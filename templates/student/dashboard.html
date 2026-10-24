@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- User Welcome Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                Student Resource Workspace
+            </h3>
+            <p class="text-muted small mb-0">
+                Welcome back, <strong>{{ current_user.name }}</strong> ({{ current_user.email }})
+                {% if current_user.department %} • Department: {{ current_user.department }}{% endif %}
+            </p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <a href="{{ url_for('catalog.browse') }}" class="btn btn-teal btn-sm">
+                <i class="bi bi-search me-1"></i> Browse Catalog
+            </a>
+            <a href="{{ url_for('student.listings') }}" class="btn btn-outline-teal btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Offer a Resource
+            </a>
+        </div>
+    </div>
+
+    <!-- Student Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="kpi-card shadow-sm" style="border-left-color: #0d9488;">
+                <div class="kpi-title"><i class="bi bi-boxes me-1 text-teal-600"></i> Active Loans</div>
+                <div class="kpi-value">{{ stats.active_loans }}</div>
+                <div class="kpi-sub"><a href="{{ url_for('student.loans') }}" class="text-decoration-none">View Borrowed Items →</a></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="kpi-card shadow-sm" style="border-left-color: {% if stats.overdue_loans > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                <div class="kpi-title"><i class="bi bi-exclamation-octagon me-1 {% if stats.overdue_loans > 0 %}text-danger{% else %}text-success{% endif %}"></i> Overdue Items</div>
+                <div class="kpi-value {% if stats.overdue_loans > 0 %}text-danger{% else %}text-success{% endif %}">{{ stats.overdue_loans }}</div>
+                <div class="kpi-sub">{% if stats.overdue_loans > 0 %}Immediate return required{% else %}All loans on track{% endif %}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="kpi-card shadow-sm" style="border-left-color: #f59e0b;">
+                <div class="kpi-title"><i class="bi bi-calendar2-check me-1 text-warning"></i> Active Holds</div>
+                <div class="kpi-value">{{ stats.active_reservations }}</div>
+                <div class="kpi-sub"><a href="{{ url_for('student.reservations') }}" class="text-decoration-none">Manage Holds →</a></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="kpi-card shadow-sm" style="border-left-color: #8b5cf6;">
+                <div class="kpi-title"><i class="bi bi-share me-1 text-purple"></i> My Peer Listings</div>
+                <div class="kpi-value" style="color: #6d28d9;">{{ stats.my_active_listings }}</div>
+                <div class="kpi-sub"><a href="{{ url_for('student.listings') }}" class="text-decoration-none">Manage Listings →</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Upcoming Due Loans -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>Items Currently Borrowed</span>
+                    <a href="{{ url_for('student.loans') }}" class="small text-decoration-none">Full History →</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_loans %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-criss mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Resource</th>
+                                        <th>Barcode</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in upcoming_loans %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ item.title }}</td>
+                                        <td class="font-monospace small">{{ item.barcode }}</td>
+                                        <td class="small">{{ item.due_date|date_only }}</td>
+                                        <td>
+                                            {% if item.days_left < 0 %}
+                                                <span class="badge badge-overdue">Overdue by {{ -item.days_left }}d</span>
+                                            {% elif item.days_left == 0 %}
+                                                <span class="badge badge-reserved">Due Today</span>
+                                            {% else %}
+                                                <span class="badge badge-available">{{ item.days_left }}d left</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-check-circle fs-2 text-success d-block mb-2"></i>
+                            No items currently borrowed. You can explore our catalog to check out textbooks and lab equipment.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reservations -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-calendar-event me-2 text-teal-600"></i>Active & Upcoming Reservations</span>
+                    <a href="{{ url_for('student.reservations') }}" class="small text-decoration-none">View All →</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_reservations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-criss mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Resource</th>
+                                        <th>Start Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in recent_reservations %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ r.title }}</td>
+                                        <td class="small">{{ r.start_datetime|dt_format }}</td>
+                                        <td>
+                                            {% if r.status == 'confirmed' %}
+                                                <span class="badge badge-available">Confirmed</span>
+                                            {% elif r.status == 'pending_approval' %}
+                                                <span class="badge badge-reserved">Pending Review</span>
+                                            {% elif r.status == 'fulfilled' %}
+                                                <span class="badge badge-onloan">Fulfilled</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ r.status|capitalize }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No active reservations scheduled. Book an item in advance to guarantee availability.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

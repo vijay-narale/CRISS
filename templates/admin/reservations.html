@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Reservations{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-calendar-check text-teal-600 me-2"></i>Campus Reservation Holds
+            </h3>
+            <p class="text-muted small mb-0">Review pending reservation holds, track upcoming schedules, and manage conflict states</p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <a href="{{ url_for('admin.reservations', status='pending_approval') }}" class="btn btn-warning btn-sm fw-semibold">
+                Pending Review Only
+            </a>
+            <a href="{{ url_for('admin.reservations') }}" class="btn btn-outline-secondary btn-sm">
+                All Reservations
+            </a>
+        </div>
+    </div>
+
+    <div class="card card-criss">
+        <div class="card-body p-0">
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Requester</th>
+                                <th>Resource Title</th>
+                                <th>Category</th>
+                                <th>Copy Barcode</th>
+                                <th>Start Date/Time</th>
+                                <th>End Date/Time</th>
+                                <th>Status</th>
+                                <th>Requester Notes</th>
+                                <th class="text-end">Coordinator Review</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reservations %}
+                            <tr>
+                                <td class="font-monospace small text-muted">{{ r.reservation_id }}</td>
+                                <td>
+                                    <div class="fw-bold text-navy-800">{{ r.requester_name }}</div>
+                                    <div class="small text-muted">{{ r.requester_email }}</div>
+                                    <span class="badge bg-secondary text-uppercase" style="font-size: 0.65rem;">{{ r.requester_role }}</span>
+                                </td>
+                                <td class="fw-semibold">{{ r.resource_title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ r.category_name }}</span></td>
+                                <td class="font-monospace small">{{ r.barcode or 'Pending' }}</td>
+                                <td class="small">{{ r.start_datetime|dt_format }}</td>
+                                <td class="small">{{ r.end_datetime|dt_format }}</td>
+                                <td>
+                                    {% if r.status == 'confirmed' %}
+                                        <span class="badge badge-available">Confirmed</span>
+                                    {% elif r.status == 'pending_approval' %}
+                                        <span class="badge badge-reserved">Pending Review</span>
+                                    {% elif r.status == 'fulfilled' %}
+                                        <span class="badge badge-onloan">Fulfilled</span>
+                                    {% elif r.status == 'cancelled' %}
+                                        <span class="badge bg-secondary">Cancelled</span>
+                                    {% elif r.status == 'rejected' %}
+                                        <span class="badge badge-overdue">Declined</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ r.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted" style="max-width: 180px;">{{ r.notes or '—' }}</td>
+                                <td class="text-end">
+                                    {% if r.status == 'pending_approval' %}
+                                        <form method="POST" action="{{ url_for('admin.review_reservation', reservation_id=r.reservation_id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-sm btn-success py-0 px-2">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin.review_reservation', reservation_id=r.reservation_id) }}" class="d-inline ms-1">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2">Decline</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="small text-muted">Complete</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary"></i>
+                    <h5 class="fw-bold text-navy-800">No Reservations Matching Filter</h5>
+                    <p class="small text-muted mb-0">No active or historical reservations meet your query filter.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+digraph G {
+    rankdir=TB;
+    nodesep=0.4;
+    ranksep=0.5;
+    bgcolor="#ffffff";
+    node [fontname="Arial", fontsize=10, shape=box, style="rounded,filled"];
+    edge [fontname="Arial", fontsize=9, color="#475569"];
+
+    subgraph cluster_presentation {
+        label = "Presentation Tier (Responsive Client Interface)";
+        style = "filled";
+        color = "#0f172a";
+        fillcolor = "#f8fafc";
+        fontname = "Arial Bold";
+        fontsize = 11;
+        fontcolor = "#0f172a";
+
+        UI_Web [label="Bootstrap 5 / HTML5 / CSS3
+Academic Technology UI", fillcolor="#e0f2fe", color="#0284c7"];
+        UI_Charts [label="Chart.js 4.4 Analytics Visualizations
+(Utilization, Demand, Inventory)", fillcolor="#e0f2fe", color="#0284c7"];
+        UI_Peer [label="Student Peer-to-Peer Sharing Portal
+(Privacy-Shielded Academic Lending)", fillcolor="#e0f2fe", color="#0284c7"];
+    }
+
+    subgraph cluster_application {
+        label = "Application & Business Logic Tier (Python Flask)";
+        style = "filled";
+        color = "#0d9488";
+        fillcolor = "#f0fdfa";
+        fontname = "Arial Bold";
+        fontsize = 11;
+        fontcolor = "#0d9488";
+
+        Auth_Svc [label="Auth & RBAC Service
+(PBKDF2 Hashing, CSRF Tokens)", fillcolor="#ccfbf1", color="#0d9488"];
+        Resv_Svc [label="Reservation Service
+(ACID Holds, Conflict Engine)", fillcolor="#ccfbf1", color="#0d9488"];
+        Loan_Svc [label="Loan Circulation Desk
+(Checkouts, Returns, Overdue)", fillcolor="#ccfbf1", color="#0d9488"];
+        Demand_Eng [label="Demand-Aware Allocation Engine
+(Unmet Rate, MCDA Priority Scoring)", fillcolor="#fee2e2", color="#dc2626"];
+        Rec_Svc [label="Alternative Recommendation Engine
+(Category, Dept, Purpose Matching)", fillcolor="#ccfbf1", color="#0d9488"];
+        Maint_Svc [label="Maintenance & Repair Service
+(Damage Workflow, Cost Tracking)", fillcolor="#ccfbf1", color="#0d9488"];
+        Peer_Svc [label="Peer Lending Service
+(Student Listings, Privacy Shields)", fillcolor="#ccfbf1", color="#0d9488"];
+    }
+
+    subgraph cluster_database {
+        label = "Data Tier (MySQL 8.0 InnoDB RDBMS - 3NF Normalized)";
+        style = "filled";
+        color = "#1e293b";
+        fillcolor = "#f1f5f9";
+        fontname = "Arial Bold";
+        fontsize = 11;
+        fontcolor = "#1e293b";
+
+        DB_Tables [label="12 Normalized Relational Tables
+(Users, Resources, Copies, Reservations, Loans...)", fillcolor="#ffffff", color="#334155"];
+        DB_Views [label="Compiled Analytical Views
+(view_resource_inventory_summary,
+view_unmet_demand_analytics)", fillcolor="#ffffff", color="#334155"];
+        DB_Proc [label="Stored Procedure
+(sp_reserve_resource with FOR UPDATE)", fillcolor="#ffffff", color="#334155"];
+        DB_Triggers [label="ACID State Triggers
+(trg_after_loan_insert_update_copy,
+trg_after_loan_return_update_copy)", fillcolor="#ffffff", color="#334155"];
+    }
+
+    UI_Web -> Auth_Svc [label="HTTP / Sessions"];
+    UI_Web -> Resv_Svc [label="Booking Requests"];
+    UI_Web -> Loan_Svc [label="Checkout / Return"];
+    UI_Charts -> Demand_Eng [label="REST JSON APIs"];
+    UI_Peer -> Peer_Svc [label="Listings & Borrows"];
+
+    Auth_Svc -> DB_Tables [label="users, departments"];
+    Resv_Svc -> DB_Tables [label="SELECT ... FOR UPDATE"];
+    Resv_Svc -> DB_Proc [label="CALL sp_reserve_resource"];
+    Loan_Svc -> DB_Tables [label="INSERT loans"];
+    Loan_Svc -> DB_Triggers [label="Fires on loan events"];
+    Demand_Eng -> DB_Views [label="Query Analytical Views"];
+    Peer_Svc -> DB_Tables [label="student_listings"];
+    Rec_Svc -> DB_Tables [label="Query Alternative Assets"];
+    Maint_Svc -> DB_Tables [label="maintenance_records"];
+}

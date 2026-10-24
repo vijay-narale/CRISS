@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Register Account{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card card-criss shadow-sm p-4">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-teal-50 text-teal-600 mb-2">
+                        <i class="bi bi-person-plus-fill fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold text-navy-800">Register Campus Account</h3>
+                    <p class="text-muted small">Join the Campus Resource Intelligence & Sharing Network</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Full Name *</label>
+                            <input type="text" class="form-control" name="full_name" required placeholder="e.g. Aarav Sharma">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Campus Email *</label>
+                            <input type="email" class="form-control" name="email" required placeholder="username@criss.edu">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Campus ID / Roll No *</label>
+                            <input type="text" class="form-control" name="student_faculty_id" required placeholder="e.g. STU-2026-001">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Academic Role *</label>
+                            <select class="form-select" name="role" required>
+                                <option value="student" selected>Student</option>
+                                <option value="faculty">Faculty / Lab Coordinator</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Home Department</label>
+                            <select class="form-select" name="department_id">
+                                <option value="">-- Select Department --</option>
+                                {% for dept in departments %}
+                                    <option value="{{ dept.department_id }}">{{ dept.code }} - {{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Contact Phone (Private / Administrative)</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="+1-555-0100 (Kept private, never shown publicly)">
+                            <div class="form-text small">Your phone number is strictly kept confidential for institutional verification.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Password *</label>
+                            <input type="password" class="form-control" name="password" required minlength="6" placeholder="At least 6 characters">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Confirm Password *</label>
+                            <input type="password" class="form-control" name="confirm_password" required minlength="6" placeholder="Repeat password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-teal w-100 py-2 fw-bold mb-3">
+                        <i class="bi bi-check2-circle me-1"></i> Complete Registration
+                    </button>
+                </form>
+
+                <div class="text-center">
+                    <span class="text-muted small">Already registered? </span>
+                    <a href="{{ url_for('auth.login') }}" class="small fw-semibold text-teal-600">Sign In here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

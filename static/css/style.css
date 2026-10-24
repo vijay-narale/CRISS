@@ -1,0 +1,307 @@
+/* ==========================================================================
+   CRISS - Campus Resource Intelligence & Sharing System
+   Theme: Navy & White with Crisp Teal Accents
+   ========================================================================== */
+
+:root {
+    --navy-900: #0a0f1d;
+    --navy-800: #0f172a;
+    --navy-700: #1e293b;
+    --navy-600: #334155;
+    --teal-600: #0d9488;
+    --teal-500: #14b8a6;
+    --teal-400: #2dd4bf;
+    --teal-100: #ccfbf1;
+    --teal-50:  #f0fdfa;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-400: #94a3b8;
+    --slate-600: #475569;
+    --danger-red: #ef4444;
+    --warning-amber: #f59e0b;
+    --success-green: #10b981;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background-color: var(--slate-50);
+    color: var(--navy-800);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar-criss {
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+    border-bottom: 2px solid var(--teal-600);
+    box-shadow: 0 4px 12px rgba(10, 15, 29, 0.15);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #ffffff !important;
+}
+
+.brand-badge {
+    background-color: var(--teal-500);
+    color: var(--navy-900);
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.nav-link {
+    color: #cbd5e1 !important;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    padding: 0.5rem 0.85rem;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--teal-400) !important;
+}
+
+/* Hero Section */
+.hero-banner {
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%);
+    color: #ffffff;
+    padding: 4.5rem 1rem;
+    border-bottom: 3px solid var(--teal-500);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-banner::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Cards */
+.card-criss {
+    background: #ffffff;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-criss:hover {
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.card-header-criss {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--slate-200);
+    font-weight: 600;
+    color: var(--navy-800);
+    padding: 1rem 1.25rem;
+}
+
+/* Metrics and KPI */
+.kpi-card {
+    background: #ffffff;
+    border-left: 4px solid var(--teal-500);
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.kpi-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--slate-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--navy-800);
+    margin-top: 0.25rem;
+}
+
+.kpi-sub {
+    font-size: 0.8rem;
+    color: var(--slate-400);
+}
+
+/* Buttons */
+.btn-teal {
+    background-color: var(--teal-600);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    padding: 0.55rem 1.2rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-teal:hover {
+    background-color: var(--teal-500);
+    color: #ffffff;
+}
+
+.btn-outline-teal {
+    color: var(--teal-600);
+    border: 1.5px solid var(--teal-600);
+    background: transparent;
+    font-weight: 600;
+}
+
+.btn-outline-teal:hover {
+    background-color: var(--teal-600);
+    color: #ffffff;
+}
+
+.btn-navy {
+    background-color: var(--navy-800);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+}
+
+.btn-navy:hover {
+    background-color: var(--navy-700);
+    color: #ffffff;
+}
+
+/* Badges */
+.badge-available {
+    background-color: #dcfce7;
+    color: #166534;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-onloan {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-reserved {
+    background-color: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-overdue {
+    background-color: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-maint {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-retired {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.badge-peer {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+/* Tables */
+.table-criss {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-criss thead th {
+    background-color: var(--slate-100);
+    color: var(--navy-800);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--slate-200);
+    padding: 0.85rem 1rem;
+}
+
+.table-criss tbody td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--slate-200);
+}
+
+.table-criss tbody tr:hover {
+    background-color: var(--teal-50);
+}
+
+/* Forms */
+.form-control:focus, .form-select:focus {
+    border-color: var(--teal-500);
+    box-shadow: 0 0 0 0.25rem rgba(20, 184, 166, 0.25);
+}
+
+/* Recommendation Box */
+.recommendation-card {
+    border-left: 4px solid var(--teal-500);
+    background-color: #f0fdfa;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Formula Box */
+.formula-box {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 1.25rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.95rem;
+    border-left: 4px solid var(--teal-400);
+}
+
+/* Footer */
+footer {
+    background-color: var(--navy-900);
+    color: #94a3b8;
+    margin-top: auto;
+    padding: 2rem 0;
+    border-top: 1px solid var(--navy-700);
+}
+
+footer a {
+    color: var(--teal-400);
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}SQL Analytics & Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-file-earmark-spreadsheet text-teal-600 me-2"></i>Campus Circulation Analytics & Reports
+            </h3>
+            <p class="text-muted small mb-0">Multi-table SQL aggregation, GROUP BY, date arithmetic, and audit CSV exports</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <a href="{{ url_for('admin.export_csv', start_date=start_date, end_date=end_date) }}" class="btn btn-teal btn-sm fw-semibold">
+                <i class="bi bi-download me-1"></i> Export Circulation Log to CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Filter Bar -->
+    <div class="card card-criss p-3 mb-4">
+        <form method="GET" action="{{ url_for('admin.reports') }}" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text fw-bold">From:</span>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text fw-bold">To:</span>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-navy btn-sm px-3">
+                    <i class="bi bi-funnel me-1"></i> Run SQL Aggregation
+                </button>
+                <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-secondary btn-sm">Reset Dates</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report 1: Category Circulation & Aggregate Utilization -->
+    <div class="card card-criss mb-4">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-calculator me-2 text-primary"></i>Category Circulation & Loan Duration Aggregation</span>
+            <span class="badge bg-light text-secondary border">SQL GROUP BY & Aggregate Functions</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-criss mb-0">
+                    <thead>
+                        <tr>
+                            <th>Category Name</th>
+                            <th>Master Titles</th>
+                            <th>Total Physical Units</th>
+                            <th>Loans Issued (In Period)</th>
+                            <th>Overdue Loans</th>
+                            <th>Avg Borrow Duration (Days)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_circulation %}
+                        <tr>
+                            <td class="fw-bold text-navy-800">{{ row.category_name }}</td>
+                            <td>{{ row.titles_count }}</td>
+                            <td>{{ row.total_inventory_units }}</td>
+                            <td class="fw-bold text-primary">{{ row.loans_issued }}</td>
+                            <td>
+                                {% if row.overdue_count > 0 %}
+                                    <span class="badge badge-overdue">{{ row.overdue_count }}</span>
+                                {% else %}
+                                    <span class="text-muted small">0</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ row.avg_loan_duration_days or '—' }} days</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report 2: Departmental Demand & Resource Distribution -->
+    <div class="card card-criss">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-buildings me-2 text-teal-600"></i>Departmental Activity & Resource Allocation Matrix</span>
+            <span class="badge bg-light text-secondary border">Multi-Table JOIN & Conditional COUNT</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-criss mb-0">
+                    <thead>
+                        <tr>
+                            <th>Dept Code</th>
+                            <th>Department Name</th>
+                            <th>Catalog Resources Hosted</th>
+                            <th>Student Loans Issued</th>
+                            <th>Demand Requests Logged</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_dept_demand %}
+                        <tr>
+                            <td><span class="badge bg-secondary font-monospace">{{ row.dept_code }}</span></td>
+                            <td class="fw-bold text-navy-800">{{ row.dept_name }}</td>
+                            <td>{{ row.resources_hosted }}</td>
+                            <td class="text-primary fw-semibold">{{ row.student_loans_count }}</td>
+                            <td class="text-danger fw-semibold">{{ row.demand_requests_logged }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

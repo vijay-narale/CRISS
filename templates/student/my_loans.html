@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}My Borrowing History{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">My Borrowing & Circulation Records</h3>
+            <p class="text-muted small mb-0">Track active checkouts, upcoming due dates, and return condition history</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-light text-secondary border px-3 py-2">
+                Maximum limit: 3 active loans simultaneously
+            </span>
+        </div>
+    </div>
+
+    <div class="card card-criss">
+        <div class="card-body p-0">
+            {% if loans %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>Loan #</th>
+                                <th>Resource Title</th>
+                                <th>Category</th>
+                                <th>Barcode</th>
+                                <th>Checkout Date</th>
+                                <th>Due Date</th>
+                                <th>Return Date</th>
+                                <th>Condition</th>
+                                <th>Circulation Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in loans %}
+                            <tr>
+                                <td class="text-muted small font-monospace">{{ l.loan_id }}</td>
+                                <td class="fw-bold text-navy-800">{{ l.resource_title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ l.category_name }}</span></td>
+                                <td class="font-monospace small">{{ l.barcode }}</td>
+                                <td class="small">{{ l.checkout_date|date_only }}</td>
+                                <td class="small fw-semibold">{{ l.due_date|date_only }}</td>
+                                <td class="small text-muted">
+                                    {{ l.return_date|date_only if l.return_date else 'Active / In Possession' }}
+                                </td>
+                                <td class="small">
+                                    <div><span class="text-muted">Out:</span> {{ l.checkout_condition }}</div>
+                                    {% if l.return_condition %}
+                                        <div><span class="text-muted">In:</span> {{ l.return_condition }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if l.status == 'active' %}
+                                        {% if l.days_overdue and l.days_overdue > 0 %}
+                                            <span class="badge badge-overdue">Overdue ({{ l.days_overdue }}d)</span>
+                                        {% else %}
+                                            <span class="badge badge-onloan"><i class="bi bi-clock me-1"></i>Active Loan</span>
+                                        {% endif %}
+                                    {% elif l.status == 'overdue' %}
+                                        <span class="badge badge-overdue"><i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue</span>
+                                    {% elif l.status == 'returned' %}
+                                        <span class="badge badge-available"><i class="bi bi-check2 me-1"></i>Returned</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ l.status|capitalize }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-journal-x fs-1 d-block mb-3 text-secondary"></i>
+                    <h5 class="fw-bold text-navy-800">No Circulation History</h5>
+                    <p class="small text-muted mb-3">You have not checked out any items from the central circulation desk yet.</p>
+                    <a href="{{ url_for('catalog.browse') }}" class="btn btn-teal btn-sm">Explore Academic Catalog</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

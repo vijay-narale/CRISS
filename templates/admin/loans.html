@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Circulation Desk & Loans{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-upc-scan text-teal-600 me-2"></i>Campus Circulation & Loan Desk
+            </h3>
+            <p class="text-muted small mb-0">Direct checkout, item returns, overdue fine assessments, and condition inspections</p>
+        </div>
+        <div>
+            <form method="POST" action="{{ url_for('admin.scan_overdue') }}" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-shield-exclamation me-1"></i> Scan & Flag Overdue Loans
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Operations Row: Checkout & Return Cards -->
+    <div class="row g-4 mb-4">
+        <!-- 1. Quick Checkout Form -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss bg-teal-50 text-teal-600 fw-bold">
+                    <i class="bi bi-box-arrow-right me-2"></i>Issue Resource Checkout
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.checkout') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Physical Copy Barcode *</label>
+                            <input type="text" class="form-control font-monospace" name="barcode" required placeholder="Scan or type barcode (e.g. CRISS-BK-CS001)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Borrower Campus ID or Email *</label>
+                            <input type="text" class="form-control" name="borrower_identifier" required placeholder="Student ID (STU-2024-001) or email (student@criss.edu)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Custom Borrow Duration (Days)</label>
+                            <input type="number" class="form-control" name="custom_days" placeholder="Leave empty for category default (e.g. 7 or 14 days)">
+                        </div>
+
+                        <button type="submit" class="btn btn-teal w-100 fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i> Authorize & Issue Checkout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Quick Return Form -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss bg-light fw-bold text-navy-800">
+                    <i class="bi bi-box-arrow-in-left me-2"></i>Process Item Return
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.return_resource') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Barcode or Loan ID *</label>
+                            <input type="text" class="form-control font-monospace" name="barcode" placeholder="Scan returned copy barcode (e.g. CRISS-BK-CS002)">
+                            <div class="form-text small">Alternatively enter numeric Loan ID below if known.</div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Return Condition Grade</label>
+                                <select class="form-select" name="return_condition">
+                                    <option value="New">New</option>
+                                    <option value="Good" selected>Good</option>
+                                    <option value="Fair">Fair</option>
+                                    <option value="Needs Maintenance">Needs Maintenance (Damage detected)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Specific Loan ID (Optional)</label>
+                                <input type="number" class="form-control" name="loan_id" placeholder="Optional Loan ID">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Inspection & Damage Notes</label>
+                            <input type="text" class="form-control" name="notes" placeholder="e.g. Returned on time, minor cover wear">
+                        </div>
+
+                        <button type="submit" class="btn btn-navy w-100 fw-bold">
+                            <i class="bi bi-check-lg me-1"></i> Confirm Return & Restock Copy
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active & Overdue Loans Table -->
+    <div class="card card-criss mb-4">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-clock-history me-2 text-teal-600"></i>Active & Overdue Circulation ({{ active_loans|length }} Items)</span>
+            <span class="badge bg-danger">{{ active_loans|selectattr('status', 'equalto', 'overdue')|list|length }} Overdue</span>
+        </div>
+        <div class="card-body p-0">
+            {% if active_loans %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>Loan #</th>
+                                <th>Borrower</th>
+                                <th>Resource Title</th>
+                                <th>Barcode</th>
+                                <th>Checkout Date</th>
+                                <th>Due Date</th>
+                                <th>Condition</th>
+                                <th>Status</th>
+                                <th class="text-end">Quick Return</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in active_loans %}
+                            <tr>
+                                <td class="font-monospace small text-muted">{{ l.loan_id }}</td>
+                                <td>
+                                    <div class="fw-bold text-navy-800">{{ l.borrower_name }}</div>
+                                    <div class="small text-muted font-monospace">{{ l.student_faculty_id }}</div>
+                                </td>
+                                <td class="fw-semibold">{{ l.resource_title }}</td>
+                                <td class="font-monospace small">{{ l.barcode }}</td>
+                                <td class="small">{{ l.checkout_date|date_only }}</td>
+                                <td class="small fw-semibold">{{ l.due_date|date_only }}</td>
+                                <td class="small">{{ l.checkout_condition }}</td>
+                                <td>
+                                    {% if l.status == 'overdue' or (l.days_overdue and l.days_overdue > 0) %}
+                                        <span class="badge badge-overdue">Overdue ({{ l.days_overdue or 1 }}d)</span>
+                                    {% else %}
+                                        <span class="badge badge-onloan">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('admin.return_resource') }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="loan_id" value="{{ l.loan_id }}">
+                                        <input type="hidden" name="return_condition" value="Good">
+                                        <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2">
+                                            Return
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">No active loans currently in circulation.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Returned Loans Table -->
+    <div class="card card-criss">
+        <div class="card-header-criss">
+            <span class="fw-bold"><i class="bi bi-archive me-2 text-secondary"></i>Recently Returned Loan History</span>
+        </div>
+        <div class="card-body p-0">
+            {% if returned_loans %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>Loan #</th>
+                                <th>Borrower</th>
+                                <th>Resource Title</th>
+                                <th>Barcode</th>
+                                <th>Checkout Date</th>
+                                <th>Due Date</th>
+                                <th>Returned On</th>
+                                <th>Return Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in returned_loans %}
+                            <tr>
+                                <td class="font-monospace small text-muted">{{ r.loan_id }}</td>
+                                <td>{{ r.borrower_name }}</td>
+                                <td>{{ r.resource_title }}</td>
+                                <td class="font-monospace small">{{ r.barcode }}</td>
+                                <td class="small">{{ r.checkout_date|date_only }}</td>
+                                <td class="small">{{ r.due_date|date_only }}</td>
+                                <td class="small text-success">{{ r.return_date|dt_format }}</td>
+                                <td class="small">{{ r.return_condition or 'Good' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">No returned loan records found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

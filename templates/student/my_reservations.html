@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}My Reservations{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">My Resource Reservations</h3>
+            <p class="text-muted small mb-0">Track your confirmed holds, review status, and manage schedule bookings</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <a href="{{ url_for('catalog.browse') }}" class="btn btn-teal btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Reservation
+            </a>
+        </div>
+    </div>
+
+    <div class="card card-criss">
+        <div class="card-body p-0">
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Resource Title</th>
+                                <th>Category</th>
+                                <th>Allocated Copy</th>
+                                <th>Booking Interval</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reservations %}
+                            <tr>
+                                <td class="text-muted small">{{ r.reservation_id }}</td>
+                                <td class="fw-bold text-navy-800">{{ r.resource_title }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ r.category_name }}</span></td>
+                                <td class="font-monospace small">{{ r.barcode or 'To be assigned' }}</td>
+                                <td class="small">
+                                    <div><strong>Start:</strong> {{ r.start_datetime|dt_format }}</div>
+                                    <div><strong>End:</strong> {{ r.end_datetime|dt_format }}</div>
+                                </td>
+                                <td>
+                                    {% if r.status == 'confirmed' %}
+                                        <span class="badge badge-available"><i class="bi bi-check-circle me-1"></i>Confirmed</span>
+                                    {% elif r.status == 'pending_approval' %}
+                                        <span class="badge badge-reserved"><i class="bi bi-clock me-1"></i>Pending Review</span>
+                                    {% elif r.status == 'fulfilled' %}
+                                        <span class="badge badge-onloan"><i class="bi bi-box-arrow-right me-1"></i>Fulfilled</span>
+                                    {% elif r.status == 'cancelled' %}
+                                        <span class="badge bg-secondary">Cancelled</span>
+                                    {% elif r.status == 'rejected' %}
+                                        <span class="badge badge-overdue">Declined</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ r.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted" style="max-width: 200px;">
+                                    {{ r.notes or '—' }}
+                                </td>
+                                <td class="text-end">
+                                    {% if r.status in ('confirmed', 'pending_approval') %}
+                                    <form method="POST" action="{{ url_for('student.cancel_reservation', reservation_id=r.reservation_id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm btn-confirm-action" data-confirm-message="Are you sure you want to cancel this reservation hold?">
+                                            Cancel Hold
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                        <span class="text-muted small">No action</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary"></i>
+                    <h5 class="fw-bold text-navy-800">No Reservations on File</h5>
+                    <p class="small text-muted mb-3">You have not scheduled any upcoming holds on lab equipment or study rooms.</p>
+                    <a href="{{ url_for('catalog.browse') }}" class="btn btn-teal btn-sm">Explore Catalog to Book</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

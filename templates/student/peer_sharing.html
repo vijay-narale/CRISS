@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Peer Sharing Network{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-people-fill text-teal-600 me-2"></i>Student-to-Student Peer Sharing Network
+            </h3>
+            <p class="text-muted small mb-0">Borrow course materials and lab kits directly from fellow campus peers</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <a href="{{ url_for('student.listings') }}" class="btn btn-teal btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Offer Your Resource
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% if listings %}
+            {% for item in listings %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card card-criss h-100 d-flex flex-column border-purple">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-light text-dark border">{{ item.category_name }}</span>
+                            <span class="badge badge-peer"><i class="bi bi-check2-circle me-1"></i>Available</span>
+                        </div>
+
+                        <h5 class="card-title fw-bold text-navy-800 mb-1">
+                            <a href="{{ url_for('catalog.resource_detail', resource_id=item.resource_id) }}" class="text-decoration-none text-dark">
+                                {{ item.title }}
+                            </a>
+                        </h5>
+
+                        <div class="small text-secondary mb-2">
+                            <i class="bi bi-person-circle text-purple me-1"></i>
+                            Offered by <strong>{{ item.lender_name }}</strong>
+                            {% if item.lender_dept %}<span class="badge bg-secondary ms-1">{{ item.lender_dept }}</span>{% endif %}
+                        </div>
+
+                        <div class="small p-2 bg-light rounded border mb-2">
+                            <strong>Condition:</strong> {{ item.condition_desc }}
+                        </div>
+
+                        <div class="small text-muted mb-3 flex-grow-1">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                            <strong>Pickup:</strong> {{ item.pickup_instructions }}
+                        </div>
+
+                        <div class="small text-muted mb-3">
+                            <i class="bi bi-calendar-range me-1"></i>
+                            {{ item.available_from|date_only }} to {{ item.available_until|date_only }}
+                        </div>
+
+                        <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                            <span class="small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Verified Peer</span>
+                            <a href="{{ url_for('catalog.resource_detail', resource_id=item.resource_id) }}" class="btn btn-teal btn-sm">
+                                Request Item <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card card-criss p-5 text-center text-muted">
+                    <i class="bi bi-people fs-1 d-block mb-3 text-secondary"></i>
+                    <h5 class="fw-bold text-navy-800">No Peer Listings Currently Available</h5>
+                    <p class="small text-muted mb-3">Be the first student to offer a textbook or circuit kit to your peers!</p>
+                    <div>
+                        <a href="{{ url_for('student.listings') }}" class="btn btn-teal btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Offer a Resource
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

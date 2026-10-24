@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}404 Not Found{% endblock %}
+
+{% block content %}
+<div class="container text-center py-5 my-5">
+    <div class="display-1 text-teal-600 fw-bold mb-3">404</div>
+    <h3 class="fw-bold text-navy-800 mb-2">Resource Page Not Found</h3>
+    <p class="text-secondary mb-4">
+        The catalog item or URL you requested could not be located in the database.
+    </p>
+    <a href="{{ url_for('catalog.browse') }}" class="btn btn-teal">
+        <i class="bi bi-grid me-1"></i> Browse Resource Catalog
+    </a>
+</div>
+{% endblock %}

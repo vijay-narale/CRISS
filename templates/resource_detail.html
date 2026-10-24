@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resource.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('catalog.index') }}" class="text-teal-600">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('catalog.browse') }}" class="text-teal-600">Catalog</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('catalog.browse', category=resource.category_id) }}" class="text-teal-600">{{ resource.category_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ resource.title[:35] }}...</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- Resource Main Details -->
+        <div class="col-lg-8">
+            <div class="card card-criss p-4 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-light text-dark border me-1">{{ resource.category_name }}</span>
+                        {% if resource.dept_code %}
+                            <span class="badge bg-secondary me-1">{{ resource.dept_code }} - {{ resource.dept_name }}</span>
+                        {% endif %}
+                        {% if resource.owner_type == 'student' %}
+                            <span class="badge badge-peer"><i class="bi bi-people-fill me-1"></i>Student Peer Shared</span>
+                        {% else %}
+                            <span class="badge bg-primary"><i class="bi bi-building me-1"></i>College Institutional Asset</span>
+                        {% endif %}
+                    </div>
+
+                    {% if available_copies_count > 0 %}
+                        <span class="badge badge-available fs-6 mt-2 mt-sm-0">
+                            <i class="bi bi-check2-circle me-1"></i>{{ available_copies_count }} Available Now
+                        </span>
+                    {% elif student_listing and student_listing.listing_status == 'available' %}
+                        <span class="badge badge-peer fs-6 mt-2 mt-sm-0">
+                            <i class="bi bi-check2-circle me-1"></i>Peer Lending Available
+                        </span>
+                    {% else %}
+                        <span class="badge badge-overdue fs-6 mt-2 mt-sm-0">
+                            <i class="bi bi-exclamation-circle me-1"></i>Currently Unavailable
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h3 class="fw-bold text-navy-800 mb-2">{{ resource.title }}</h3>
+
+                {% if resource.model_or_author or resource.isbn_or_identifier %}
+                <div class="d-flex flex-wrap gap-3 text-muted small mb-3">
+                    {% if resource.model_or_author %}
+                        <div><i class="bi bi-person-badge me-1"></i><strong>Author/Model:</strong> {{ resource.model_or_author }}</div>
+                    {% endif %}
+                    {% if resource.isbn_or_identifier %}
+                        <div><i class="bi bi-upc-scan me-1"></i><strong>Identifier / ISBN:</strong> {{ resource.isbn_or_identifier }}</div>
+                    {% endif %}
+                    <div><i class="bi bi-clock me-1"></i><strong>Standard Period:</strong> Up to {{ resource.max_borrow_days }} Days</div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <h6 class="fw-bold text-secondary mb-1">Academic Purpose & Scope</h6>
+                    <p class="text-secondary mb-0">
+                        {{ resource.purpose or 'General academic and lab coursework study material.' }}
+                    </p>
+                </div>
+
+                <div class="p-3 bg-light rounded border mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-geo-alt-fill text-danger fs-4 me-3"></i>
+                        <div>
+                            <div class="fw-bold text-dark">Circulation & Pickup Location:</div>
+                            <div class="text-secondary small">{{ resource.location }}</div>
+                            {% if resource.dept_building %}
+                                <div class="text-muted small">Building: {{ resource.dept_building }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Peer Student Listing Box if applicable -->
+                {% if student_listing %}
+                <div class="card border-purple p-3 mb-4" style="background-color: #fdf2f8; border-left: 4px solid #c084fc;">
+                    <h5 class="fw-bold text-purple mb-2"><i class="bi bi-share-fill me-2"></i>Student Peer Lending Offer</h5>
+                    <div class="row g-2 small">
+                        <div class="col-md-6">
+                            <strong>Offered By:</strong> {{ student_listing.lender_name }} ({{ student_listing.lender_dept or 'Student' }})
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Availability Window:</strong> {{ student_listing.available_from|date_only }} to {{ student_listing.available_until|date_only }}
+                        </div>
+                        <div class="col-12 mt-2">
+                            <strong>Item Condition:</strong> {{ student_listing.condition_desc }}
+                        </div>
+                        <div class="col-12">
+                            <strong>Safe Handover Instructions:</strong> {{ student_listing.pickup_instructions }}
+                        </div>
+                    </div>
+                    <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                        <i class="bi bi-shield-lock-fill text-teal-600 me-1"></i>Privacy Policy: Student contact numbers and emails are strictly protected and never displayed publicly.
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Physical Copies Inventory Table -->
+                {% if copies %}
+                <div class="mb-4">
+                    <h5 class="fw-bold text-navy-800 mb-2">Physical Inventory Units ({{ copies|length }} Total Units)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-criss table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Barcode</th>
+                                    <th>Condition</th>
+                                    <th>Inventory Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cp in copies %}
+                                <tr>
+                                    <td class="fw-bold font-monospace">{{ cp.barcode }}</td>
+                                    <td>{{ cp.condition_grade }}</td>
+                                    <td>
+                                        {% if cp.status == 'available' %}
+                                            <span class="badge badge-available">Available</span>
+                                        {% elif cp.status == 'on_loan' %}
+                                            <span class="badge badge-onloan">On Loan</span>
+                                        {% elif cp.status == 'reserved' %}
+                                            <span class="badge badge-reserved">Reserved</span>
+                                        {% elif cp.status == 'maintenance' %}
+                                            <span class="badge badge-maint">In Maintenance</span>
+                                        {% else %}
+                                            <span class="badge badge-retired">{{ cp.status|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Upcoming Schedule (Conflict Visibility) -->
+                {% if active_reservations %}
+                <div>
+                    <h6 class="fw-bold text-secondary mb-2">Active Reservation Schedule</h6>
+                    <ul class="list-group list-group-flush border rounded small">
+                        {% for rsv in active_reservations %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                Booked from <strong>{{ rsv.start_datetime|dt_format }}</strong> to <strong>{{ rsv.end_datetime|dt_format }}</strong>
+                            </span>
+                            <span class="badge bg-secondary">{{ rsv.status|capitalize }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Alternative Recommendations Engine Display (When unavailable) -->
+            {% if alternatives %}
+            <div class="card card-criss p-4 mb-4" style="border-top: 4px solid var(--teal-500) !important;">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="p-2 bg-teal-50 rounded text-teal-600 me-2">
+                        <i class="bi bi-lightbulb-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-navy-800 mb-0">Recommended Available Alternatives</h5>
+                        <p class="text-muted small mb-0">Alternative recommendation algorithm matching category, course purpose, department, and live stock.</p>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    {% for alt in alternatives %}
+                    <div class="col-md-6">
+                        <div class="recommendation-card h-100 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-light text-dark border">{{ alt.category_name }}</span>
+                                {% if alt.available_copies > 0 %}
+                                    <span class="badge badge-available">{{ alt.available_copies }} Available</span>
+                                {% elif alt.is_peer_listing %}
+                                    <span class="badge badge-peer">Peer Shared</span>
+                                {% endif %}
+                            </div>
+
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="{{ url_for('catalog.resource_detail', resource_id=alt.resource_id) }}" class="text-decoration-none text-dark">
+                                    {{ alt.title }}
+                                </a>
+                            </h6>
+
+                            <p class="small text-muted mb-2 fst-italic">
+                                <i class="bi bi-info-circle text-teal-600 me-1"></i>{{ alt.explanation }}
+                            </p>
+
+                            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                                <span class="small text-secondary">{{ alt.location }}</span>
+                                <a href="{{ url_for('catalog.resource_detail', resource_id=alt.resource_id) }}" class="btn btn-teal btn-sm">
+                                    Switch to Item <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action / Booking Sidebar -->
+        <div class="col-lg-4">
+            <!-- Reservation Form Card -->
+            <div class="card card-criss p-4 mb-4 sticky-top" style="top: 80px; z-index: 5;">
+                <h5 class="fw-bold text-navy-800 mb-3">
+                    <i class="bi bi-calendar2-plus-fill text-teal-600 me-2"></i>Reserve Resource
+                </h5>
+
+                {% if resource.requires_approval %}
+                <div class="alert alert-warning small py-2 mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i><strong>Approval Required:</strong> This item or facility requires authorization from the department coordinator.
+                </div>
+                {% endif %}
+
+                {% if current_user %}
+                    {% if available_copies_count > 0 or (student_listing and student_listing.listing_status == 'available') %}
+                    <form method="POST" action="{{ url_for('catalog.reserve', resource_id=resource.resource_id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Reservation Start *</label>
+                            <input type="datetime-local" class="form-control" name="start_datetime" value="{{ default_start }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Reservation End / Return Due *</label>
+                            <input type="datetime-local" class="form-control" name="end_datetime" value="{{ default_end }}" required>
+                            <div class="form-text small">Maximum duration: {{ resource.max_borrow_days }} days.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Academic Purpose / Project Notes</label>
+                            <textarea class="form-control" name="notes" rows="2" placeholder="Coursework topic, lab assignment, or team meeting details..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-teal w-100 py-2 fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i> Confirm & Book Hold
+                        </button>
+                    </form>
+                    {% else %}
+                        <div class="alert alert-danger small mb-3">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> All units are currently in circulation or booked.
+                        </div>
+
+                        <!-- Log Demand Request Form -->
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="fw-bold text-danger mb-1">
+                                <i class="bi bi-bell-fill me-1"></i>Log Unmet Demand Request
+                            </h6>
+                            <p class="small text-secondary mb-3">
+                                Notify campus administrators and get prioritized when stock is returned or new copies arrive.
+                            </p>
+
+                            <form method="POST" action="{{ url_for('catalog.request_demand', resource_id=resource.resource_id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="category_id" value="{{ resource.category_id }}">
+
+                                <div class="mb-2">
+                                    <textarea class="form-control form-control-sm" name="description" rows="2" required placeholder="Specify your coursework urgency or deadline..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100 fw-semibold">
+                                    Log Unmet Demand
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <!-- Not logged in prompt -->
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-person-fill-lock me-1"></i> Please log in with your campus account to reserve this resource or record an unfulfilled demand request.
+                    </div>
+                    <a href="{{ url_for('auth.login', next=request.url) }}" class="btn btn-teal w-100 py-2 fw-bold mb-2">
+                        Sign In to Reserve
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary w-100 btn-sm">
+                        Create New Account
+                    </a>
+                {% endif %}
+
+                <!-- Transaction Safety Note -->
+                <div class="mt-4 pt-3 border-top text-muted" style="font-size: 0.75rem;">
+                    <i class="bi bi-shield-check text-success me-1"></i><strong>ACID Protection:</strong> Reservations execute within MySQL transactions using row-level locking (<code>SELECT ... FOR UPDATE</code>) to eliminate race conditions and prevent double-booking.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

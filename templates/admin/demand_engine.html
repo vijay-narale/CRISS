@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Demand-Aware Allocation Engine{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-graph-up-arrow text-danger me-2"></i>Demand-Aware Resource Allocation Engine
+            </h3>
+            <p class="text-muted small mb-0">Deterministic Mathematical Allocation & Contention Intelligence (DBMS Analytics)</p>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-danger px-3 py-2 fs-6">
+                {{ unfulfilled_requests|length }} Unfulfilled Student Requests
+            </span>
+        </div>
+    </div>
+
+    <!-- Mathematical Formula & Scoring Explanation Card -->
+    <div class="card card-criss mb-4" style="border-top: 4px solid #ef4444 !important;">
+        <div class="card-header-criss bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-navy-800">
+                <i class="bi bi-calculator-fill text-danger me-2"></i>Multi-Criteria Resource Priority Formula & Specification
+            </span>
+            <span class="badge bg-secondary">Deterministic Linear MCDA</span>
+        </div>
+        <div class="card-body">
+            <div class="formula-box mb-3">
+                {{ formula_info.formula }}
+            </div>
+            
+            <div class="row g-3 small">
+                <div class="col-md-6">
+                    <div class="border rounded p-2 bg-light h-100">
+                        <strong class="text-danger">1. Unmet Demand Rate (Weight: 40%)</strong>
+                        <div class="font-monospace text-dark mt-1">{{ formula_info.unmet_demand_rate }}</div>
+                        <div class="text-muted mt-1">Calculates the exact ratio of unfulfilled requests against total valid requests. Cancelled requests are excluded to avoid duplicate counting.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-2 bg-light h-100">
+                        <strong class="text-primary">2. Resource Utilization Rate (Weight: 35%)</strong>
+                        <div class="font-monospace text-dark mt-1">{{ formula_info.utilization_rate }}</div>
+                        <div class="text-muted mt-1">Measures the proportion of physical copies actively out on loan or held in confirmed reservations.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-2 bg-light h-100">
+                        <strong class="text-warning text-dark">3. Request Frequency Factor (Weight: 15%)</strong>
+                        <div class="font-monospace text-dark mt-1">{{ formula_info.request_frequency_factor }}</div>
+                        <div class="text-muted mt-1">Normalizes request volume into a 0–100 scale to give weight to items experiencing sustained campus-wide demand.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-2 bg-light h-100">
+                        <strong class="text-teal-600">4. Scarcity of Alternatives Factor (Weight: 10%)</strong>
+                        <div class="font-monospace text-dark mt-1">{{ formula_info.alternative_scarcity_factor }}</div>
+                        <div class="text-muted mt-1">Rewards higher priority to items that lack substitute resources in the same category or department.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-secondary small mt-3 mb-0 py-2">
+                <i class="bi bi-info-circle-fill me-1 text-primary"></i> <strong>DBMS Integrity Note:</strong> {{ formula_info.methodology }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Unmet Demand Rates (From Database View) -->
+    <div class="card card-criss mb-4">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-table me-2 text-teal-600"></i>Category Demand Fulfillment View (<code>view_unmet_demand_analytics</code>)</span>
+            <span class="badge bg-light text-secondary border">Compiled MySQL View</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-criss mb-0">
+                    <thead>
+                        <tr>
+                            <th>Category ID</th>
+                            <th>Category Name</th>
+                            <th>Total Valid Requests</th>
+                            <th>Unfulfilled Requests</th>
+                            <th>Fulfilled Requests</th>
+                            <th>Unmet Demand Rate (%)</th>
+                            <th>Demand Contention Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cd in category_demand %}
+                        <tr>
+                            <td class="text-muted small">{{ cd.category_id }}</td>
+                            <td class="fw-bold text-navy-800">{{ cd.category_name }}</td>
+                            <td>{{ cd.total_requests }}</td>
+                            <td class="text-danger fw-bold">{{ cd.unfulfilled_requests }}</td>
+                            <td class="text-success">{{ cd.fulfilled_requests }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="fw-bold me-2">{{ cd.unmet_demand_rate_pct }}%</span>
+                                    <div class="progress flex-grow-1" style="height: 6px; width: 80px;">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ cd.unmet_demand_rate_pct }}%;"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if cd.unmet_demand_rate_pct >= 60 %}
+                                    <span class="badge badge-overdue">Severe Shortage</span>
+                                {% elif cd.unmet_demand_rate_pct >= 30 %}
+                                    <span class="badge badge-reserved">Moderate Shortage</span>
+                                {% elif cd.total_requests == 0 %}
+                                    <span class="badge bg-light text-muted border">No Requests</span>
+                                {% else %}
+                                    <span class="badge badge-available">Satisfied Demand</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranked Resources Table -->
+    <div class="card card-criss mb-4">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-sort-numeric-down text-danger me-2"></i>Resource Priority Ranking for Procurement & Reallocation</span>
+            <span class="badge bg-dark">{{ ranked_resources|length }} Resources Evaluated</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-criss mb-0">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Resource Title</th>
+                            <th>Category</th>
+                            <th>Inventory (Avail/Total)</th>
+                            <th>Utilization</th>
+                            <th>Unmet Demand</th>
+                            <th>Alternatives</th>
+                            <th>Priority Score</th>
+                            <th>Priority Tier</th>
+                            <th>Recommended Administrative Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in ranked_resources %}
+                        <tr>
+                            <td class="fw-bold text-muted font-monospace">#{{ loop.index }}</td>
+                            <td class="fw-bold text-navy-800">{{ res.title }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ res.category_name }}</span></td>
+                            <td class="small">{{ res.available_copies }} / {{ res.total_copies }}</td>
+                            <td class="small">{{ res.utilization_rate }}%</td>
+                            <td class="small text-danger fw-semibold">{{ res.unmet_demand_rate }}% ({{ res.unfulfilled_requests }} reqs)</td>
+                            <td class="small">{{ res.available_alternatives }} avail</td>
+                            <td>
+                                <span class="fw-bold fs-6 text-navy-800">{{ res.priority_score }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ res.badge_class }}">{{ res.priority_tier }}</span>
+                            </td>
+                            <td class="small text-secondary" style="max-width: 250px;">
+                                {{ res.action_recommendation }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unfulfilled Demand Queue with Stock Allocation -->
+    <div class="card card-criss">
+        <div class="card-header-criss d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-inbox-fill text-warning me-2"></i>Unfulfilled Demand Queue (Pending Fulfillment)</span>
+            <span class="badge bg-danger">{{ unfulfilled_requests|length }} Pending</span>
+        </div>
+        <div class="card-body p-0">
+            {% if unfulfilled_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-criss mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student Requester</th>
+                                <th>Target Resource</th>
+                                <th>Category</th>
+                                <th>Coursework Description</th>
+                                <th>Logged On</th>
+                                <th>Live Stock</th>
+                                <th class="text-end">Allocate Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in unfulfilled_requests %}
+                            <tr>
+                                <td class="font-monospace small text-muted">{{ req.request_id }}</td>
+                                <td>
+                                    <div class="fw-bold text-navy-800">{{ req.requester_name }}</div>
+                                    <div class="small text-muted">{{ req.requester_email }}</div>
+                                </td>
+                                <td class="fw-semibold">{{ req.resource_title or 'General Category Request' }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ req.category_name }}</span></td>
+                                <td class="small text-muted" style="max-width: 250px;">{{ req.description }}</td>
+                                <td class="small">{{ req.created_at|date_only }}</td>
+                                <td>
+                                    {% if req.available_stock_count > 0 %}
+                                        <span class="badge badge-available">{{ req.available_stock_count }} Units Available!</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0 Units Available</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#fulfillModal{{ req.request_id }}">
+                                        Allocate Copy
+                                    </button>
+
+                                    <!-- Fulfill Modal for this request -->
+                                    <div class="modal fade text-start" id="fulfillModal{{ req.request_id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold">Allocate Stock to {{ req.requester_name }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="POST" action="{{ url_for('admin.fulfill_demand_request') }}">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <input type="hidden" name="request_id" value="{{ req.request_id }}">
+
+                                                        <p class="small text-muted mb-3">
+                                                            Select an available inventory copy to allocate to this student. The system will mark the request fulfilled and dispatch an in-app allocation notification to the student.
+                                                        </p>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label small fw-bold">Available Inventory Copy *</label>
+                                                            <select class="form-select" name="copy_id" required>
+                                                                <option value="">-- Select Available Copy --</option>
+                                                                {% for cp in available_copies %}
+                                                                    <option value="{{ cp.copy_id }}">
+                                                                        {{ cp.barcode }} - {{ cp.title }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-teal btn-sm fw-semibold">Confirm Allocation</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    <i class="bi bi-check2-circle fs-2 text-success d-block mb-2"></i>
+                    All student demand requests have been fulfilled!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

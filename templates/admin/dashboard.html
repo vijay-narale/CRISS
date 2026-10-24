@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h3 class="fw-bold text-navy-800 mb-1">
+                <i class="bi bi-shield-check text-teal-600 me-2"></i>Campus Resource Administrative Center
+            </h3>
+            <p class="text-muted small mb-0">Dean of Academic Resources & Facilities Command Dashboard</p>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <a href="{{ url_for('admin.demand_engine') }}" class="btn btn-danger btn-sm fw-semibold">
+                <i class="bi bi-graph-up-arrow me-1"></i> Demand Engine
+            </a>
+            <a href="{{ url_for('admin.loans') }}" class="btn btn-teal btn-sm">
+                <i class="bi bi-upc-scan me-1"></i> Circulation Desk
+            </a>
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> SQL Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card shadow-sm" style="border-left-color: #0d9488;">
+                <div class="kpi-title"><i class="bi bi-collection me-1 text-teal-600"></i> Total Resources</div>
+                <div class="kpi-value">{{ kpi.total_resources }} <span class="fs-6 fw-normal text-muted">({{ kpi.total_copies }} units)</span></div>
+                <div class="kpi-sub">{{ kpi.available_copies }} available for immediate loan</div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card shadow-sm" style="border-left-color: #0284c7;">
+                <div class="kpi-title"><i class="bi bi-speedometer2 me-1 text-primary"></i> Campus Utilization</div>
+                <div class="kpi-value text-primary">{{ utilization_rate }}%</div>
+                <div class="kpi-sub">{{ kpi.active_loans }} active loans + {{ kpi.active_reservations }} holds</div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card shadow-sm" style="border-left-color: {% if kpi.overdue_loans > 0 %}#ef4444{% else %}#10b981{% endif %};">
+                <div class="kpi-title"><i class="bi bi-exclamation-triangle-fill me-1 {% if kpi.overdue_loans > 0 %}text-danger{% else %}text-success{% endif %}"></i> Overdue Loans</div>
+                <div class="kpi-value {% if kpi.overdue_loans > 0 %}text-danger{% else %}text-success{% endif %}">{{ kpi.overdue_loans }}</div>
+                <div class="kpi-sub">
+                    <form method="POST" action="{{ url_for('admin.scan_overdue') }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-link p-0 text-decoration-none small">Run Daily Scan →</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="kpi-card shadow-sm" style="border-left-color: #f59e0b;">
+                <div class="kpi-title"><i class="bi bi-bell-fill me-1 text-warning"></i> Unfulfilled Demand</div>
+                <div class="kpi-value text-warning">{{ kpi.unfulfilled_requests }}</div>
+                <div class="kpi-sub"><a href="{{ url_for('admin.demand_engine') }}" class="text-decoration-none">Open Demand Engine →</a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Live Visualization Row -->
+    <div class="row g-4 mb-4">
+        <!-- Resource Utilization by Category Bar Chart -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-bar-chart-line-fill text-teal-600 me-2"></i>Resource Utilization by Category</span>
+                    <span class="badge bg-light text-muted border">Live Database Metrics</span>
+                </div>
+                <div class="card-body">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="utilizationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unmet Demand by Category Doughnut Chart -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss">
+                    <span class="fw-bold"><i class="bi bi-pie-chart-fill text-danger me-2"></i>Unmet Demand Rates</span>
+                </div>
+                <div class="card-body">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="unmetDemandChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Physical Inventory Status Breakdown Pie Chart -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss">
+                    <span class="fw-bold"><i class="bi bi-pie-chart text-primary me-2"></i>Inventory Breakdown</span>
+                </div>
+                <div class="card-body">
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="inventoryPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Overdue Loans Table -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>Urgent Overdue Items</span>
+                    <a href="{{ url_for('admin.loans') }}" class="small text-decoration-none">Manage Circulation →</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if overdue_loans %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-criss mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Resource Title</th>
+                                        <th>Due Date</th>
+                                        <th>Overdue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for o in overdue_loans %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-navy-800">{{ o.borrower_name }}</div>
+                                            <div class="small text-muted font-monospace">{{ o.student_faculty_id }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ o.resource_title }}</div>
+                                            <span class="badge bg-light text-secondary font-monospace">{{ o.barcode }}</span>
+                                        </td>
+                                        <td class="small">{{ o.due_date|date_only }}</td>
+                                        <td>
+                                            <span class="badge badge-overdue">{{ o.days_overdue }} days</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-check2-all fs-2 text-success d-block mb-2"></i>
+                            Excellent! No loans are currently overdue across campus.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Reservation Approvals Table -->
+        <div class="col-lg-6">
+            <div class="card card-criss h-100">
+                <div class="card-header-criss d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-warning text-dark"><i class="bi bi-shield-exclamation me-2"></i>Pending Approvals</span>
+                    <a href="{{ url_for('admin.reservations', status='pending_approval') }}" class="small text-decoration-none">All Approvals →</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if pending_reservations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-criss mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Requester</th>
+                                        <th>Resource</th>
+                                        <th>Period</th>
+                                        <th class="text-end">Review</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in pending_reservations %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold text-navy-800">{{ p.requester_name }}</div>
+                                            <span class="badge bg-secondary text-uppercase" style="font-size: 0.65rem;">{{ p.requester_role }}</span>
+                                        </td>
+                                        <td>
+                                            <div>{{ p.resource_title }}</div>
+                                            {% if p.barcode %}<span class="badge bg-light text-muted font-monospace">{{ p.barcode }}</span>{% endif %}
+                                        </td>
+                                        <td class="small">
+                                            {{ p.start_datetime|date_only }}
+                                        </td>
+                                        <td class="text-end">
+                                            <form method="POST" action="{{ url_for('admin.review_reservation', reservation_id=p.reservation_id) }}" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-sm btn-success py-0 px-2" title="Approve">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ url_for('admin.review_reservation', reservation_id=p.reservation_id) }}" class="d-inline ms-1">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Reject">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox fs-2 text-secondary d-block mb-2"></i>
+                            No reservations currently awaiting administrative or faculty review.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
